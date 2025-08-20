@@ -1,0 +1,5 @@
+<h2>COVID Dashboard</h2>
+<p>Interactive Power BI dashboard analyzing COVID cases worldwide.</p>
+<img src="images/covid-dashboard-screenshot.png" alt="Dashboard Screenshot" width="600" />
+<p><a href="https://github.com/Tabassum707/covid-dashboard">View Source on GitHub</a></p>
+<p><a href="https://app.powerbi.com/view?r=your-published-report-link">View Live Report</a></p>
