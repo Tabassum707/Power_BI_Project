@@ -4,6 +4,7 @@ A Power BI Project
 
 
 <p align="center">
-  <img src="images/Summary.png" width="600">
+  <img src="Images/Summary.png" width="600"><br>
+  <em>Figure 1: COVID-19 Summary</em>
 </p>
 
