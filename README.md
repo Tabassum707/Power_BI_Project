@@ -3,9 +3,41 @@
 
 Developed an interactive Power BI dashboard analyzing global COVID-19 data from Johns Hopkins University. Built multi-page dashboard with advanced DAX calculations, dynamic filtering, and professional visualizations including world maps. Combined three CSV files using Power Query.
 
+ **Metric Type:**
+  ```dax
+if Text.Contains([Source.Name], "confirmed") then "Confirmed"
+else if Text.Contains([Source.Name], "deaths") then "Deaths" 
+else "Recovered"
+```
+
 Dataset: [COVID-19 Time Series Dataset (JHU CSSE)](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series)
 
 1. Created new measures - total cases, total confirmed, total deaths, fatality rate. In the Figure 1, the numbers are shown for each measure.
+   ### Key DAX Measures Created:
+
+
+  **Total Confirmed Cases:**
+  ```dax
+  Total Confirmed = 
+  CALCULATE(
+      SUM('JHU COVID Data'[Cases]), 
+      'JHU COVID Data'[Metric_Type] = "Confirmed"
+  )
+  ```
+  **Total Deaths:**
+  ```dax
+  Total Deaths = 
+  CALCULATE(
+      SUM('JHU COVID Data'[Cases]), 
+      'JHU COVID Data'[Metric_Type] = "Deaths"
+  )
+  ```
+  **Fatality Rate:**
+  ```dax
+  Fatality Rate % = 
+  DIVIDE([Total Deaths], [Total Confirmed], 0) * 100
+  ```
+
 
 <p align="center">
   <img src="Images/Summary.png" width="600"><br>
