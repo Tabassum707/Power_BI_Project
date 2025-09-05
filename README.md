@@ -1,13 +1,11 @@
-<p align="center">
-  <strong> COVID-19 Global Impact Dashboard - Power BI Analytics Project </strong>
-</p>
+<h1 align="center">COVID-19 Global Impact Dashboard - Power BI Analytics Project</h1>
 
 
 Developed an interactive Power BI dashboard analyzing global COVID-19 data from Johns Hopkins University. Built multi-page dashboard with advanced DAX calculations, dynamic filtering, and professional visualizations including world maps. Combined three CSV files using Power Query.
 
 Dataset: [COVID-19 Time Series Dataset (JHU CSSE)](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series)
 
-1. Created new measures - total cases, total confirmed, total deaths, fatality rate. In the Figure1, the numbers are shown for each measure.
+1. Created new measures - total cases, total confirmed, total deaths, fatality rate. In the Figure 1, the numbers are shown for each measure.
 
 <p align="center">
   <img src="Images/Summary.png" width="600"><br>
