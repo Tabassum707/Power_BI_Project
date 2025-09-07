@@ -10,60 +10,60 @@ Dataset: [COVID-19 Time Series Dataset (JHU CSSE)](https://github.com/CSSEGISand
    ### Key DAX Measures Created:
 
    **Total Cases:**
-   ```
+   ```dax
    Total Cases = SUM('Combined Covid-19 Data'[Cases])
    ```
-
-  **Total Confirmed Cases:**
-  ```dax
+   **Total Confirmed Cases:**
+   ```dax
    Total Confirmed = CALCULATE(SUM('Combined Covid-19 Data'[Cases]),'Combined Covid-19 Data'[Metric Type]="Confirmed")
-  ```
-  **Total Deaths:**
-  ```dax
-  Total Deaths = CALCULATE(SUM('Combined Covid-19 Data'[Cases]),'Combined Covid-19 Data'[Metric Type]="Deaths")
-  ```
+   ```
+   
+   **Total Deaths:**
+   ```dax
+   Total Deaths = CALCULATE(SUM('Combined Covid-19 Data'[Cases]),'Combined Covid-19 Data'[Metric Type]="Deaths")
+   ```
 
-  **Total Recovered**
-  ```
-  Total Recovered = CALCULATE(SUM('Combined Covid-19 Data'[Cases]),'Combined Covid-19 Data'[Metric Type]="Recovered")
-  ```
-  **Fatality Rate:**
-  ```dax
-  Fatality Rate = DIVIDE([Total Deaths],[Total Confirmed],0)*100
+   **Total Recovered**
+   ```
+   Total Recovered = CALCULATE(SUM('Combined Covid-19 Data'[Cases]),'Combined Covid-19 Data'[Metric Type]="Recovered")
+   ```
+   **Fatality Rate:**
+   ```dax
+   Fatality Rate = DIVIDE([Total Deaths],[Total Confirmed],0)*100
 
-  ```
-  **7 Day Average**
-  ```
-  7-Day Average = 
-AVERAGEX(
+   ```
+   **7 Day Average**
+   ```dax
+   7-Day Average = 
+   AVERAGEX(
     DATESINPERIOD('Combined Covid-19 Data'[Date], MAX('Combined Covid-19 Data'[Date]), -7, DAY),
     [Total Confirmed]
-)
-  ```
-  **Daily New Cases**
-  ```
-  Daily New Cases = VAR CURRENTDATE = MAX('Combined Covid-19 Data'[Date])
+   )
+   ```
+   **Daily New Cases**
+   ```
+   Daily New Cases = VAR CURRENTDATE = MAX('Combined Covid-19 Data'[Date])
                     VAR PREVIOUSDATE = CURRENTDATE - 1
                     RETURN
                     CALCULATE([Total Confirmed],'Combined Covid-19 Data'[Date]=CURRENTDATE) -
                     CALCULATE([Total Confirmed],'Combined Covid-19 Data'[Date]=PREVIOUSDATE)
-  ```
-  **Peak Date**
-  ```
-  Peak Date = 
-  FORMAT(
+   ```
+   **Peak Date**
+   ```
+   Peak Date = 
+   FORMAT(
       CALCULATE(
           MAX('Combined Covid-19 Data'[Date]),
           'Combined Covid-19 Data'[Cases] = MAXX('Combined Covid-19 Data', 'Combined Covid-19 Data'[Cases])
       ),
       "MMMM DD, YYYY"
-  )
-  ```
+   )
+   ```
 
 
 <p align="center">
   <img src="Images/Overview.png" width="600"><br>
-  <em>Figure 1: COVID-19 Summary</em>
+  <em>Figure 1: COVID-19 Overview</em>
 </p>
 
 2. Added a line chart for total deaths, recovered, and confirmed cases.
@@ -79,7 +79,7 @@ AVERAGEX(
   <em>Figure 3: Global Overview</em>
 </p>
 
-4. Horizontal bar chart displaying the top 10 countries ranked by total confirmed COVID-19 cases.
+4. Horizontal bar chart displaying the top 10 countries ranked by total cases of COVID-19.
 <p align="center">
   <img src="Images/Top 10.png" width="600"><br>
   <em>Figure 4: Top 10 Countries</em>
