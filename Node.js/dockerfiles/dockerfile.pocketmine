@@ -1,0 +1,48 @@
+# Base image
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    unzip \
+    ca-certificates \
+    xz-utils \
+    build-essential \
+    nano \
+    && rm -rf /var/lib/apt/lists/*
+
+# ------------------------
+# Install Node.js v24.x
+# ------------------------
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
+    && apt-get install -y nodejs \
+    && node -v \
+    && npm -v
+
+# ------------------------
+# Install PocketMine-MP
+# ------------------------
+WORKDIR /workdir
+
+# PMMP installer (downloads PMMP PHP binary with all extensions)
+RUN curl -sL https://get.pmmp.io | bash -s - -r
+
+# Replace PHAR with specific version if desired (<5.32.1)
+RUN rm -f PocketMine-MP.phar && \
+    curl -L -o PocketMine-MP.phar \
+    https://github.com/pmmp/PocketMine-MP/releases/download/5.31.0/PocketMine-MP.phar
+
+# Accept EULA
+RUN echo "yes" > eula.txt
+
+# Expose Bedrock port
+EXPOSE 19132/udp
+
+# Set working directory for Node PoCs if needed
+WORKDIR /workspace
+
+# Default command: start PocketMine
+CMD ["/pmmp/start.sh"]

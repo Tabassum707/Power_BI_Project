@@ -1,0 +1,21 @@
+# Use Windows Server Core 2022 as base
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+# Set working directory
+WORKDIR C:\workdir
+
+# Download Node.js v22.21.1 and install
+RUN powershell -Command `
+    $ErrorActionPreference = 'Stop'; `
+    Invoke-WebRequest -Uri "https://nodejs.org/dist/v22.21.1/node-v22.21.1-x64.msi" -OutFile "C:\nodejs.msi"; `
+    Start-Process msiexec.exe -ArgumentList '/i C:\nodejs.msi /quiet /norestart' -Wait; `
+    Remove-Item C:\nodejs.msi
+
+# Add Node.js to PATH
+ENV PATH="C:\\Program Files\\nodejs\\:${PATH}"
+
+# Optional: verify installation
+# RUN node -v; npm -v
+
+# Default shell
+CMD ["cmd.exe"]

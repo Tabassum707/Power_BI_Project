@@ -1,0 +1,20 @@
+# Use official Node.js 20.18.1 image
+FROM node:20.18.1
+
+WORKDIR /workdir
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    nano \
+    git \
+    ca-certificates \
+    xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Initialize npm project
+RUN npm init -y
+
+# Install parse-duration
+RUN npm install parse-duration@2.1.2
+
+CMD ["/bin/bash"]

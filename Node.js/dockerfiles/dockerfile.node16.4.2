@@ -1,0 +1,39 @@
+# Use exact Node version
+FROM node:16.4.2-buster
+
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Replace sources.list to point to archived Buster repos
+RUN sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list \
+    && sed -i 's|http://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list
+
+# Disable valid period check for archive repos
+RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+
+# Install useful tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    nano \
+    ca-certificates \
+    build-essential \
+    git \
+    wget \
+    iputils-ping \
+    net-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /workdir
+
+# Initialize minimal project
+RUN npm init -y
+
+# Install vulnerable undici
+RUN npm install undici@4.1.0
+
+# Verify installation
+RUN node -v && npm list undici
+
+# Default shell
+CMD ["/bin/bash"]

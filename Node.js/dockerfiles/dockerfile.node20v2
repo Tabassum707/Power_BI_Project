@@ -1,0 +1,15 @@
+FROM node:20-bullseye
+
+RUN apt-get update && apt-get install -y \
+    plocate \
+    sudo \
+    postgresql \
+    wireless-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /workdir
+WORKDIR /workdir
+
+RUN npm install systeminformation@5.30.7
+
+CMD ["/bin/bash"]
